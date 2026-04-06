@@ -1,0 +1,1901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0a1a">
+<title>🎨 Doodle Duel v2.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --neon-pink: #ff2d78;
+    --neon-cyan: #00e5ff;
+    --neon-yellow: #ffe600;
+    --neon-green: #39ff14;
+    --neon-purple: #bf00ff;
+    --bg-dark: #0a0a1a;
+    --bg-card: #12122a;
+    --bg-panel: #1a1a35;
+    --text-bright: #ffffff;
+    --text-soft: #a0a0cc;
+    --glow-pink: 0 0 20px #ff2d78, 0 0 40px #ff2d7855;
+    --glow-cyan: 0 0 20px #00e5ff, 0 0 40px #00e5ff55;
+    --glow-yellow: 0 0 20px #ffe600, 0 0 40px #ffe60055;
+    --glow-green: 0 0 20px #39ff14, 0 0 40px #39ff1455;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg-dark);
+    font-family: 'Nunito', sans-serif;
+    color: var(--text-bright);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at 20% 20%, #ff2d7815 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, #00e5ff15 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, #bf00ff10 0%, transparent 60%);
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  #app {
+    max-width: 420px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0 0 20px;
+    position: relative;
+  }
+
+  /* ===== SCREENS ===== */
+  .screen { display: none; flex-direction: column; align-items: center; padding: 20px 16px; flex: 1; }
+  .screen.active { display: flex; }
+
+  /* ===== TITLE SCREEN ===== */
+  .title-logo {
+    margin-top: 30px;
+    text-align: center;
+  }
+
+  .title-main {
+    font-family: 'Fredoka One', cursive;
+    font-size: 3.2rem;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan), var(--neon-yellow));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 15px #ff2d7888);
+    letter-spacing: 2px;
+  }
+
+  .title-sub {
+    font-size: 0.85rem;
+    color: var(--neon-cyan);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-shadow: var(--glow-cyan);
+    margin-top: 4px;
+  }
+
+  .title-art {
+    font-size: 4rem;
+    margin: 20px 0;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%,100% { transform: translateY(0) rotate(-5deg); }
+    50% { transform: translateY(-12px) rotate(5deg); }
+  }
+
+  .tagline {
+    font-size: 1rem;
+    color: var(--text-soft);
+    margin-bottom: 30px;
+    text-align: center;
+    font-weight: 700;
+  }
+
+  /* ===== BUTTONS ===== */
+  .btn {
+    border: none; cursor: pointer; font-family: 'Fredoka One', cursive;
+    border-radius: 16px; transition: all 0.15s; user-select: none;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn:active { transform: scale(0.94); }
+
+  .btn-huge {
+    width: 100%; padding: 20px 24px; font-size: 1.5rem;
+    background: linear-gradient(135deg, var(--neon-pink), #ff7c00);
+    color: white; box-shadow: var(--glow-pink), 0 8px 32px rgba(0,0,0,0.4);
+    letter-spacing: 1px; margin-bottom: 14px;
+  }
+
+  .btn-huge:hover { box-shadow: 0 0 30px #ff2d78, 0 0 60px #ff2d7866, 0 8px 32px rgba(0,0,0,0.4); }
+
+  .btn-big {
+    width: 100%; padding: 16px 24px; font-size: 1.2rem;
+    background: var(--bg-panel);
+    border: 2px solid var(--neon-cyan);
+    color: var(--neon-cyan);
+    box-shadow: var(--glow-cyan), inset 0 0 20px rgba(0,229,255,0.05);
+    margin-bottom: 12px;
+  }
+
+  .btn-big:hover { background: rgba(0,229,255,0.1); }
+
+  .btn-medium {
+    padding: 12px 20px; font-size: 1rem;
+    background: var(--bg-panel);
+    border: 2px solid var(--neon-purple);
+    color: var(--neon-purple);
+    border-radius: 12px;
+  }
+
+  .btn-yes {
+    flex: 1; padding: 18px; font-size: 1.3rem;
+    background: linear-gradient(135deg, var(--neon-green), #00cc88);
+    color: #0a1a00; font-family: 'Fredoka One', cursive;
+    border-radius: 14px; border: none; cursor: pointer;
+    box-shadow: var(--glow-green);
+  }
+
+  .btn-no {
+    flex: 1; padding: 18px; font-size: 1.3rem;
+    background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple));
+    color: white; font-family: 'Fredoka One', cursive;
+    border-radius: 14px; border: none; cursor: pointer;
+    box-shadow: var(--glow-pink);
+  }
+
+  /* ===== MODE SELECT ===== */
+  .mode-cards { width: 100%; display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
+
+  .mode-card {
+    background: var(--bg-card);
+    border: 2px solid transparent;
+    border-radius: 20px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mode-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .mode-card.ai-card { border-color: var(--neon-cyan); }
+  .mode-card.ai-card::before { background: radial-gradient(ellipse at 50% 0%, rgba(0,229,255,0.12), transparent 70%); opacity: 1; }
+  .mode-card.friend-card { border-color: var(--neon-pink); }
+  .mode-card.friend-card::before { background: radial-gradient(ellipse at 50% 0%, rgba(255,45,120,0.12), transparent 70%); opacity: 1; }
+
+  .mode-card:active { transform: scale(0.97); }
+
+  .mode-icon { font-size: 2.5rem; margin-bottom: 8px; }
+  .mode-title { font-family: 'Fredoka One', cursive; font-size: 1.4rem; }
+  .mode-desc { font-size: 0.85rem; color: var(--text-soft); margin-top: 4px; font-weight: 700; }
+  .mode-badge {
+    position: absolute; top: 14px; right: 14px;
+    background: var(--neon-yellow); color: #1a1a00;
+    font-size: 0.65rem; font-weight: 900; letter-spacing: 1px;
+    padding: 3px 8px; border-radius: 20px; text-transform: uppercase;
+  }
+
+  /* ===== SECTION HEADER ===== */
+  .screen-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.8rem;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  .screen-sub {
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 700;
+  }
+
+  /* ===== THEME COUNTDOWN ===== */
+  .theme-reveal {
+    text-align: center;
+    margin: 20px 0;
+  }
+
+  .theme-label {
+    font-size: 0.85rem;
+    color: var(--text-soft);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .theme-word {
+    font-family: 'Fredoka One', cursive;
+    font-size: 3rem;
+    background: linear-gradient(135deg, var(--neon-yellow), var(--neon-pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 12px #ffe60088);
+    animation: pulse-scale 0.5s ease-out;
+  }
+
+  @keyframes pulse-scale {
+    0% { transform: scale(0.5); opacity: 0; }
+    70% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .countdown-ring {
+    width: 100px; height: 100px;
+    position: relative;
+    margin: 20px auto;
+  }
+
+  .countdown-num {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.8rem;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--neon-cyan);
+    text-shadow: var(--glow-cyan);
+  }
+
+  /* ===== DRAW SCREEN ===== */
+  .draw-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px 0 8px;
+    gap: 8px;
+  }
+
+  .player-tag {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.9rem;
+    padding: 6px 14px;
+    border-radius: 20px;
+    text-align: center;
+    flex: 1;
+  }
+
+  .player1-tag { background: linear-gradient(135deg, var(--neon-pink), #ff7c00); color: white; }
+  .player2-tag { background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple)); color: white; }
+  .ai-tag { background: linear-gradient(135deg, var(--neon-purple), var(--neon-cyan)); color: white; }
+
+  .timer-badge {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.4rem;
+    color: var(--neon-yellow);
+    text-shadow: var(--glow-yellow);
+    background: var(--bg-card);
+    border: 2px solid var(--neon-yellow);
+    border-radius: 12px;
+    padding: 4px 14px;
+    min-width: 60px;
+    text-align: center;
+  }
+
+  .timer-badge.urgent { color: var(--neon-pink); border-color: var(--neon-pink); animation: urgent-pulse 0.5s infinite; }
+  @keyframes urgent-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  /* ===== CANVASES ===== */
+  .canvases-wrap {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .canvas-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 185px;
+  }
+
+  .canvas-label {
+    font-size: 0.7rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    padding: 3px 10px;
+    border-radius: 10px;
+  }
+
+  .canvas-label.p1 { background: var(--neon-pink); color: white; }
+  .canvas-label.p2 { background: var(--neon-cyan); color: #001a1a; }
+  .canvas-label.ai { background: var(--neon-purple); color: white; }
+
+  canvas {
+    border-radius: 12px;
+    touch-action: none;
+    cursor: crosshair;
+    background: #fff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    display: block;
+    width: 100% !important;
+  }
+
+  canvas.active-canvas { box-shadow: 0 0 0 3px var(--neon-pink), 0 4px 20px rgba(255,45,120,0.4); }
+  canvas.ai-canvas { box-shadow: 0 0 0 3px var(--neon-purple), 0 4px 20px rgba(191,0,255,0.3); opacity: 1; }
+
+  /* ===== TOOLBOX ===== */
+  .toolbox {
+    width: 100%;
+    background: var(--bg-card);
+    border-radius: 18px;
+    padding: 12px;
+    margin-top: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .tool-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .tool-row:last-child { margin-bottom: 0; }
+
+  .color-swatch {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .color-swatch.active { border-color: white; transform: scale(1.2); box-shadow: 0 0 10px rgba(255,255,255,0.5); }
+  .color-swatch:active { transform: scale(0.9); }
+
+  .brush-btn {
+    background: var(--bg-panel);
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 6px 10px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    color: white;
+  }
+
+  .brush-btn.active { border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0,229,255,0.4); }
+  .brush-btn:active { transform: scale(0.93); }
+
+  .brush-dot { background: white; border-radius: 50%; display: block; }
+
+  .shape-btn {
+    background: var(--bg-panel);
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 7px 12px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.15s;
+    color: white;
+  }
+
+  .shape-btn.active { border-color: var(--neon-yellow); box-shadow: 0 0 10px rgba(255,230,0,0.4); }
+  .shape-btn:active { transform: scale(0.93); }
+
+  .tool-divider { width: 1px; height: 32px; background: rgba(255,255,255,0.1); flex-shrink: 0; }
+
+  .icon-btn {
+    background: var(--bg-panel);
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 7px 12px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: all 0.15s;
+    color: white;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+  }
+
+  .icon-btn:active { transform: scale(0.93); }
+  .icon-btn.eraser.active { border-color: var(--neon-pink); box-shadow: 0 0 10px rgba(255,45,120,0.4); }
+
+  .grid-toggle { font-size: 0.7rem; letter-spacing: 1px; }
+
+  /* ===== PASS PHONE ===== */
+  .pass-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 100;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    text-align: center;
+  }
+
+  .pass-overlay.active { display: flex; }
+
+  .pass-icon { font-size: 5rem; margin-bottom: 20px; animation: float 2s ease-in-out infinite; }
+  .pass-title { font-family: 'Fredoka One', cursive; font-size: 2.2rem; margin-bottom: 10px; }
+  .pass-sub { color: var(--text-soft); font-size: 1rem; font-weight: 700; margin-bottom: 30px; }
+
+  /* ===== JUDGE SCREEN ===== */
+  .judge-card {
+    background: var(--bg-card);
+    border-radius: 20px;
+    padding: 20px;
+    width: 100%;
+    margin-bottom: 14px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .judge-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.3rem;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+
+  .score-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 10px;
+  }
+
+  .score-label { font-size: 0.8rem; font-weight: 700; color: var(--text-soft); flex: 0 0 110px; }
+
+  .score-bar-wrap { flex: 1; background: rgba(255,255,255,0.07); border-radius: 6px; height: 10px; overflow: hidden; }
+
+  .score-bar { height: 100%; border-radius: 6px; transition: width 0.8s ease-out; }
+  .score-bar.p1 { background: linear-gradient(90deg, var(--neon-pink), #ff7c00); }
+  .score-bar.p2 { background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple)); }
+
+  .score-num { font-family: 'Fredoka One', cursive; font-size: 0.9rem; color: var(--neon-yellow); flex: 0 0 28px; text-align: right; }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .total-score {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2rem;
+    padding: 6px 16px;
+    border-radius: 12px;
+  }
+
+  .total-p1 { background: linear-gradient(135deg, var(--neon-pink), #ff7c00); color: white; }
+  .total-p2 { background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple)); color: white; }
+
+  .vs-text { font-family: 'Fredoka One', cursive; font-size: 1.1rem; color: var(--text-soft); }
+
+  /* ===== WINNER BANNER ===== */
+  .winner-banner {
+    text-align: center;
+    padding: 20px;
+    border-radius: 20px;
+    width: 100%;
+    margin-bottom: 14px;
+    animation: winner-glow 1s ease-in-out infinite alternate;
+  }
+
+  .winner-banner.p1-win { background: linear-gradient(135deg, rgba(255,45,120,0.2), rgba(255,124,0,0.2)); border: 2px solid var(--neon-pink); }
+  .winner-banner.p2-win { background: linear-gradient(135deg, rgba(0,229,255,0.2), rgba(191,0,255,0.2)); border: 2px solid var(--neon-cyan); }
+  .winner-banner.draw { background: linear-gradient(135deg, rgba(255,230,0,0.2), rgba(57,255,20,0.2)); border: 2px solid var(--neon-yellow); }
+
+  @keyframes winner-glow {
+    from { box-shadow: 0 0 20px rgba(255,45,120,0.3); }
+    to { box-shadow: 0 0 40px rgba(255,45,120,0.6), 0 0 60px rgba(0,229,255,0.2); }
+  }
+
+  .winner-emoji { font-size: 3.5rem; display: block; margin-bottom: 8px; }
+  .winner-text { font-family: 'Fredoka One', cursive; font-size: 1.8rem; }
+  .winner-msg { font-size: 0.9rem; color: var(--text-soft); font-weight: 700; margin-top: 4px; }
+
+  /* ===== FAIRNESS ===== */
+  .fairness-card {
+    background: var(--bg-card);
+    border: 2px solid var(--neon-yellow);
+    border-radius: 20px;
+    padding: 18px;
+    width: 100%;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+
+  .fairness-q {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    margin-bottom: 14px;
+    color: var(--neon-yellow);
+  }
+
+  .fairness-btns { display: flex; gap: 12px; }
+
+  /* ===== ACHIEVEMENT ===== */
+  .achievement-pop {
+    display: none;
+    position: fixed;
+    top: 20px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-card);
+    border: 2px solid var(--neon-yellow);
+    border-radius: 16px;
+    padding: 12px 20px;
+    z-index: 200;
+    text-align: center;
+    box-shadow: var(--glow-yellow);
+    min-width: 260px;
+    animation: slide-down 0.3s ease-out;
+  }
+
+  @keyframes slide-down {
+    from { transform: translateX(-50%) translateY(-30px); opacity: 0; }
+    to { transform: translateX(-50%) translateY(0); opacity: 1; }
+  }
+
+  .achievement-pop.show { display: block; }
+
+  /* ===== PARTICLES ===== */
+  .particle {
+    position: fixed;
+    pointer-events: none;
+    border-radius: 50%;
+    z-index: 9998;
+    animation: particle-fall 1.5s ease-out forwards;
+  }
+
+  @keyframes particle-fall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* ===== AI THINKING ===== */
+  .ai-thinking {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,10,26,0.6);
+    border-radius: 12px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .ai-thinking.active { display: flex; }
+  .ai-thinking-text { font-size: 0.75rem; color: var(--neon-purple); font-weight: 700; letter-spacing: 1px; }
+
+  .ai-dots { display: flex; gap: 4px; }
+  .ai-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--neon-purple);
+    animation: ai-bounce 0.6s ease-in-out infinite;
+  }
+
+  .ai-dot:nth-child(2) { animation-delay: 0.1s; }
+  .ai-dot:nth-child(3) { animation-delay: 0.2s; }
+
+  @keyframes ai-bounce {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  /* ===== RECORD ===== */
+  .record-strip {
+    display: flex;
+    gap: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-soft);
+    margin-bottom: 16px;
+  }
+
+  .record-item { padding: 4px 12px; background: var(--bg-card); border-radius: 20px; }
+  .record-item span { color: var(--neon-yellow); }
+
+  /* ===== RECHALLENGE ===== */
+  .result-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+
+  /* ===== SAFETY BADGE ===== */
+  .safety-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 0.65rem;
+    color: var(--text-soft);
+    letter-spacing: 1px;
+    padding: 10px;
+    opacity: 0.7;
+  }
+
+  .safety-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--neon-green);
+    box-shadow: var(--glow-green);
+  }
+
+  /* ===== DEV CONSOLE ===== */
+  .dev-console {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: #0a0a0a;
+    border-top: 2px solid var(--neon-green);
+    padding: 12px;
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: var(--neon-green);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .dev-console.show { display: block; }
+
+  /* ===== SHAKE ANIM ===== */
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
+
+  .shake { animation: shake 0.4s ease-out; }
+
+  /* ===== GRID OVERLAY ===== */
+  .canvas-grid-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: 12px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.15) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.15) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .grid-on .canvas-grid-overlay { opacity: 1; }
+
+  .canvas-wrapper { position: relative; width: 100%; }
+
+  /* ===== WATERMARK ===== */
+  .watermark-input {
+    background: var(--bg-panel);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 10px 14px;
+    color: white;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.95rem;
+    width: 100%;
+    margin-top: 8px;
+    outline: none;
+  }
+
+  .watermark-input:focus { border-color: var(--neon-cyan); }
+  .watermark-input::placeholder { color: var(--text-soft); }
+
+  /* ===== SHARE SCREEN ===== */
+  .share-preview {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .share-canvases { display: flex; gap: 8px; margin: 10px 0; justify-content: center; }
+
+  .share-by {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.9rem;
+    color: #333;
+    margin-top: 8px;
+  }
+
+  /* ===== PAUSE BTN ===== */
+  .pause-btn {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    color: white;
+    font-size: 1rem;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-family: 'Nunito', sans-serif;
+  }
+
+  .theme-banner {
+    background: var(--bg-card);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 6px 16px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    color: var(--neon-yellow);
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  .pregame-name-screen { text-align: center; }
+
+  .name-inputs { display: flex; flex-direction: column; gap: 12px; width: 100%; margin: 20px 0; }
+
+  .name-label { font-size: 0.8rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: var(--text-soft); margin-bottom: 4px; }
+
+  .rechallenges { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; justify-content: center; }
+
+  .rechallenge-tag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: var(--bg-card);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-soft);
+  }
+
+  .rechallenge-tag.win { border-color: var(--neon-green); color: var(--neon-green); }
+  .rechallenge-tag.loss { border-color: var(--neon-pink); color: var(--neon-pink); }
+
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== TITLE SCREEN ===== -->
+  <div class="screen active" id="screen-title">
+    <div class="title-logo">
+      <div class="title-main">DOODLE DUEL</div>
+      <div class="title-sub">v2.0 · Draw · Battle · Win</div>
+    </div>
+    <div class="title-art">🎨⚔️🖌️</div>
+    <p class="tagline">Draw fast. Judge fair. Win glory! 🏆</p>
+
+    <div class="record-strip" id="record-strip" style="display:none">
+      <div class="record-item">Wins <span id="r-wins">0</span></div>
+      <div class="record-item">Losses <span id="r-losses">0</span></div>
+      <div class="record-item">Streak <span id="r-streak">0</span>🔥</div>
+    </div>
+
+    <button class="btn btn-huge" onclick="goToNameScreen()">🎮 START DUEL!</button>
+    <button class="btn btn-big" onclick="showHowTo()">📖 How to Play</button>
+
+    <div class="safety-bar">
+      <span class="safety-dot"></span>
+      KID SAFE · OFFLINE · NO DATA COLLECTED
+      <span class="safety-dot"></span>
+    </div>
+  </div>
+
+  <!-- ===== NAME SCREEN ===== -->
+  <div class="screen" id="screen-name">
+    <div class="screen-title">✏️ Who's Playing?</div>
+    <p class="screen-sub">Enter your name for the watermark!</p>
+
+    <div class="name-inputs">
+      <div>
+        <div class="name-label">🔥 Player 1 Name</div>
+        <input class="watermark-input" id="p1-name" type="text" placeholder="Your name..." maxlength="12" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+
+    <button class="btn btn-huge" onclick="goToModeSelect()">➡️ NEXT</button>
+    <button class="btn btn-big" onclick="showScreen('screen-title')">← Back</button>
+  </div>
+
+  <!-- ===== MODE SELECT ===== -->
+  <div class="screen" id="screen-mode">
+    <div class="screen-title">⚔️ Choose Opponent</div>
+    <p class="screen-sub">Who are you battling today?</p>
+    <div class="mode-cards">
+      <div class="mode-card ai-card" onclick="selectMode('ai')">
+        <div class="mode-badge">⭐ POPULAR</div>
+        <div class="mode-icon">🤖</div>
+        <div class="mode-title" style="color: var(--neon-cyan)">VS AI BOT</div>
+        <div class="mode-desc">Play alone! AI draws too. No internet needed.</div>
+      </div>
+      <div class="mode-card friend-card" onclick="selectMode('friend')">
+        <div class="mode-icon">👫</div>
+        <div class="mode-title" style="color: var(--neon-pink)">VS LOCAL FRIEND</div>
+        <div class="mode-desc">Pass the phone to a friend. Take turns!</div>
+      </div>
+    </div>
+    <button class="btn btn-big" style="margin-top:10px" onclick="showScreen('screen-name')">← Back</button>
+  </div>
+
+  <!-- ===== THEME COUNTDOWN ===== -->
+  <div class="screen" id="screen-theme">
+    <div class="screen-title" style="margin-top:20px">🎯 Today's Theme!</div>
+    <div class="theme-reveal">
+      <div class="theme-label">DRAW THIS:</div>
+      <div class="theme-word" id="theme-display">🍕 PIZZA</div>
+    </div>
+    <div class="countdown-ring">
+      <svg width="100" height="100" style="position:absolute;top:0;left:0;">
+        <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="6"/>
+        <circle id="countdown-arc" cx="50" cy="50" r="44" fill="none" stroke="var(--neon-cyan)" stroke-width="6"
+          stroke-dasharray="276.46" stroke-dashoffset="0" stroke-linecap="round"
+          transform="rotate(-90 50 50)" style="transition: stroke-dashoffset 1s linear;"/>
+      </svg>
+      <div class="countdown-num" id="countdown-num">5</div>
+    </div>
+    <p style="color: var(--text-soft); font-size: 0.9rem; font-weight: 700; text-align:center;">
+      Get your finger ready! 🖊️<br>
+      <span id="opponent-info" style="color: var(--neon-cyan)">vs AI Bot</span>
+    </p>
+  </div>
+
+  <!-- ===== PASS PHONE (Friend Mode) ===== -->
+  <div class="pass-overlay" id="pass-overlay">
+    <div class="pass-icon">📱</div>
+    <div class="pass-title">Pass the Phone!</div>
+    <div class="pass-sub" id="pass-sub">Player 2, it's your turn to draw!</div>
+    <button class="btn btn-huge" onclick="startP2Drawing()" style="width:100%;max-width:280px">
+      ✅ I'm Ready!
+    </button>
+  </div>
+
+  <!-- ===== DRAW SCREEN ===== -->
+  <div class="screen" id="screen-draw" style="padding: 10px 12px;">
+
+    <div class="draw-header">
+      <div class="player-tag player1-tag" id="p1-draw-tag">You</div>
+      <div class="timer-badge" id="timer-display">40</div>
+      <div class="player-tag" id="p2-draw-tag" style="">AI Bot</div>
+      <button class="pause-btn" onclick="togglePause()">⏸</button>
+    </div>
+
+    <div class="theme-banner" id="draw-theme-banner">🍕 PIZZA</div>
+
+    <div class="canvases-wrap">
+      <div class="canvas-container" id="p1-canvas-container">
+        <div class="canvas-label p1" id="p1-canvas-label">YOU</div>
+        <div class="canvas-wrapper" id="p1-canvas-wrapper">
+          <canvas id="p1-canvas" width="280" height="320" class="active-canvas"></canvas>
+          <div class="canvas-grid-overlay"></div>
+        </div>
+      </div>
+      <div class="canvas-container" id="p2-canvas-container">
+        <div class="canvas-label ai" id="p2-canvas-label">AI BOT</div>
+        <div class="canvas-wrapper" id="p2-canvas-wrapper">
+          <canvas id="p2-canvas" width="280" height="320" class="ai-canvas"></canvas>
+          <div class="canvas-grid-overlay"></div>
+          <div class="ai-thinking" id="ai-thinking">
+            <div class="ai-dots">
+              <div class="ai-dot"></div>
+              <div class="ai-dot"></div>
+              <div class="ai-dot"></div>
+            </div>
+            <div class="ai-thinking-text">AI IS DRAWING...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOOLBOX -->
+    <div class="toolbox" id="toolbox">
+      <!-- Colors -->
+      <div class="tool-row" id="color-row">
+        <!-- Filled by JS -->
+      </div>
+      <!-- Brushes + Eraser + Undo -->
+      <div class="tool-row">
+        <span style="font-size:0.7rem;color:var(--text-soft);font-weight:700">BRUSH:</span>
+        <button class="brush-btn active" id="brush-thin" onclick="setBrush(3,'brush-thin')">
+          <span class="brush-dot" style="width:4px;height:4px"></span>
+        </button>
+        <button class="brush-btn" id="brush-med" onclick="setBrush(8,'brush-med')">
+          <span class="brush-dot" style="width:9px;height:9px"></span>
+        </button>
+        <button class="brush-btn" id="brush-thick" onclick="setBrush(18,'brush-thick')">
+          <span class="brush-dot" style="width:18px;height:18px"></span>
+        </button>
+        <div class="tool-divider"></div>
+        <button class="icon-btn eraser" id="eraser-btn" onclick="toggleEraser()">🧹</button>
+        <button class="icon-btn" onclick="undoStroke()" title="Undo">↩️</button>
+        <button class="icon-btn" onclick="clearCanvas()" title="Clear">🗑️</button>
+        <button class="icon-btn grid-toggle" id="grid-btn" onclick="toggleGrid()">📐</button>
+      </div>
+      <!-- Shapes -->
+      <div class="tool-row">
+        <span style="font-size:0.7rem;color:var(--text-soft);font-weight:700">SHAPES:</span>
+        <button class="shape-btn" id="shape-none" onclick="setShape('none')" style="border-color:rgba(255,255,255,0.3)">✏️</button>
+        <button class="shape-btn" id="shape-circle" onclick="setShape('circle')">⬤</button>
+        <button class="shape-btn" id="shape-square" onclick="setShape('square')">■</button>
+        <button class="shape-btn" id="shape-triangle" onclick="setShape('triangle')">▲</button>
+        <button class="shape-btn" id="shape-star" onclick="setShape('star')">★</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== JUDGE SCREEN ===== -->
+  <div class="screen" id="screen-judge">
+    <div class="screen-title">🤖 AI JUDGING...</div>
+    <p class="screen-sub" id="judge-sub">Analyzing your masterpieces!</p>
+
+    <!-- Winner -->
+    <div class="winner-banner" id="winner-banner">
+      <span class="winner-emoji" id="winner-emoji">🏆</span>
+      <div class="winner-text" id="winner-text">YOU WIN!</div>
+      <div class="winner-msg" id="winner-msg">Amazing artistry!</div>
+    </div>
+
+    <!-- Scores breakdown -->
+    <div class="judge-card">
+      <div class="judge-title">📊 Score Breakdown</div>
+      <div id="score-breakdown">
+        <!-- filled by JS -->
+      </div>
+      <div class="total-row">
+        <div class="total-score total-p1" id="total-p1-score">--</div>
+        <div class="vs-text">VS</div>
+        <div class="total-score total-p2" id="total-p2-score">--</div>
+      </div>
+    </div>
+
+    <!-- Fairness appeal -->
+    <div class="fairness-card" id="fairness-card">
+      <div class="fairness-q">🤔 Fair result?</div>
+      <div class="fairness-btns">
+        <button class="btn-yes" onclick="fairnessYes()">😊 Yep!</button>
+        <button class="btn-no" onclick="fairnessNo()">😤 Recheck!</button>
+      </div>
+    </div>
+
+    <div class="result-actions" id="result-actions" style="display:none">
+      <button class="btn btn-huge" onclick="rematch()">🔄 REMATCH!</button>
+      <button class="btn btn-big" onclick="showScreen('screen-title')">🏠 Home</button>
+    </div>
+  </div>
+
+  <!-- ===== HOW TO PLAY ===== -->
+  <div class="screen" id="screen-howto">
+    <div class="screen-title">📖 How to Play</div>
+    <div style="background:var(--bg-card);border-radius:16px;padding:18px;width:100%;font-size:0.9rem;line-height:1.8;font-weight:700;color:var(--text-soft);">
+      <p>🎯 <span style="color:white">Pick a theme</span> — like Pizza or Dragon!</p>
+      <p>✏️ <span style="color:white">Draw it fast</span> — 40 seconds on your canvas</p>
+      <p>🤖 <span style="color:white">AI judges both</span> — 5 fair criteria</p>
+      <p>⚖️ <span style="color:white">Disagree?</span> — Ask for a recheck!</p>
+      <p>🏆 <span style="color:white">Win or lose</span> — rematch anytime!</p>
+      <br>
+      <p style="color:var(--neon-cyan)">🖊️ DRAWING TIPS:</p>
+      <p>• 1 finger = draw</p>
+      <p>• Use all 8 colors for more points!</p>
+      <p>• Try the shape tools for cool effects</p>
+      <p>• Finish early for a bonus point!</p>
+      <br>
+      <p style="color:var(--neon-yellow)">💡 Press F12 for secret coding challenges!</p>
+    </div>
+    <button class="btn btn-huge" style="margin-top:16px" onclick="showScreen('screen-title')">🎮 Let's Play!</button>
+  </div>
+
+</div><!-- #app -->
+
+<!-- Achievement popup -->
+<div class="achievement-pop" id="achievement-pop">
+  <div style="font-size:1.8rem" id="ach-icon">🏆</div>
+  <div style="font-family:'Fredoka One',cursive;font-size:1rem;color:var(--neon-yellow)" id="ach-title">Achievement!</div>
+  <div style="font-size:0.8rem;color:var(--text-soft);font-weight:700" id="ach-desc">Great job!</div>
+</div>
+
+<!-- Dev Console (F12 Easter egg) -->
+<div class="dev-console" id="dev-console">
+  <div style="color:var(--neon-yellow);margin-bottom:8px">🎮 DEVELOPER MODE - DOODLE DUEL v2.0</div>
+  <div>🔓 CODING CHALLENGES UNLOCKED!</div>
+  <div style="margin-top:6px;color:white">LVL 1: Add color #FF00FF to the palette (5pts) → Edit line ~420</div>
+  <div>LVL 2: Add a new shape: Star (15pts) → Edit drawShape() function</div>
+  <div>LVL 3: Add AI voice comments (25pts) → Use speechSynthesis API</div>
+  <div style="margin-top:6px;color:var(--neon-green)">Type devHelp() in console for hints! 🚀</div>
+</div>
+
+<script>
+// ===================================================
+// DOODLE DUEL v2.0 — Full Game Engine
+// ===================================================
+
+// ===== STATE =====
+const STATE = {
+  mode: 'ai',       // 'ai' or 'friend'
+  p1Name: 'You',
+  p2Name: 'AI Bot',
+  theme: '',
+  p1Score: 0,
+  p2Score: 0,
+  wins: parseInt(localStorage.getItem('dd_wins') || '0'),
+  losses: parseInt(localStorage.getItem('dd_losses') || '0'),
+  streak: parseInt(localStorage.getItem('dd_streak') || '0'),
+  timerInterval: null,
+  timeLeft: 40,
+  paused: false,
+  currentPhase: 'p1', // 'p1' or 'p2'
+  p1UndoStack: [],
+  p2UndoStack: [],
+  brushSize: 3,
+  currentColor: '#e74c3c',
+  erasing: false,
+  currentShape: 'none',
+  gridOn: false,
+  drawingActive: false,
+  shapeStart: null,
+  p1StrokeCount: 0,
+  p2StrokeCount: 0,
+  p1ColorSet: new Set(),
+  p2ColorSet: new Set(),
+  p1FinishedEarly: false,
+  p1PixelsFilled: 0,
+  p2PixelsFilled: 0,
+  aiDrawInterval: null,
+  lastResult: null,
+};
+
+// ===== THEMES =====
+const THEMES = [
+  {emoji:'🍕', name:'PIZZA'},
+  {emoji:'🐉', name:'DRAGON'},
+  {emoji:'🚀', name:'ROCKET'},
+  {emoji:'🌈', name:'RAINBOW'},
+  {emoji:'🦄', name:'UNICORN'},
+  {emoji:'🏰', name:'CASTLE'},
+  {emoji:'🐙', name:'OCTOPUS'},
+  {emoji:'🍦', name:'ICE CREAM'},
+  {emoji:'🤖', name:'ROBOT'},
+  {emoji:'🌴', name:'JUNGLE'},
+  {emoji:'🦈', name:'SHARK'},
+  {emoji:'🎃', name:'PUMPKIN'},
+  {emoji:'⚡', name:'LIGHTNING'},
+  {emoji:'🏔️', name:'MOUNTAIN'},
+  {emoji:'🐬', name:'DOLPHIN'},
+];
+
+// ===== COLORS =====
+const COLORS = [
+  '#e74c3c', '#ff8c00', '#ffe600', '#27ae60',
+  '#00bcd4', '#3498db', '#9b59b6', '#1a1a1a'
+];
+
+// ===== CANVAS REFS =====
+let p1Ctx, p2Ctx;
+let p1Canvas, p2Canvas;
+let isDrawing = false;
+let lastX = 0, lastY = 0;
+let shapeCanvas = null; // overlay for shape preview
+
+// ===== INIT =====
+window.addEventListener('DOMContentLoaded', () => {
+  p1Canvas = document.getElementById('p1-canvas');
+  p2Canvas = document.getElementById('p2-canvas');
+  p1Ctx = p1Canvas.getContext('2d');
+  p2Ctx = p2Canvas.getContext('2d');
+
+  // Responsive canvas size
+  sizeCanvases();
+  window.addEventListener('resize', sizeCanvases);
+
+  buildColorPalette();
+  setupCanvasEvents();
+  updateRecordDisplay();
+
+  // DEV CONSOLE
+  window.addEventListener('keydown', e => {
+    if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'D')) {
+      e.preventDefault();
+      document.getElementById('dev-console').classList.toggle('show');
+    }
+  });
+
+  window.devHelp = () => {
+    console.log('%c🎨 DOODLE DUEL DEV HINTS', 'color:#ffe600;font-size:18px;font-weight:bold');
+    console.log('%cHint 1 (LVL1): Find COLORS array, add "#FF00FF" to get magenta!', 'color:#00e5ff');
+    console.log('%cHint 2 (LVL2): In drawShape(), add a case for "star" using drawStar()', 'color:#39ff14');
+    console.log('%cHint 3 (LVL3): Use window.speechSynthesis.speak() in judgeResults()', 'color:#bf00ff');
+    console.log('%cYoure a future game dev! 🚀', 'color:white');
+  };
+
+  console.log('%c🎮 DOODLE DUEL v2.0 LOADED', 'color:#ffe600;font-size:20px;font-weight:bold');
+  console.log('%cPress F12 or Ctrl+Shift+D to open Dev Mode!', 'color:#00e5ff');
+  console.log('%cType devHelp() for coding challenge hints!', 'color:#39ff14');
+});
+
+function sizeCanvases() {
+  const wrap = document.getElementById('p1-canvas-wrapper');
+  if (!wrap) return;
+  const wrapW = wrap.offsetWidth;
+  const h = Math.round(wrapW * 1.15);
+
+  [p1Canvas, p2Canvas].forEach(c => {
+    const saved = c.toDataURL();
+    c.width = Math.round(wrapW * window.devicePixelRatio || wrapW);
+    c.height = Math.round(h * window.devicePixelRatio || h);
+    c.style.width = wrapW + 'px';
+    c.style.height = h + 'px';
+    const ctx = c.getContext('2d');
+    ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+    fillWhite(ctx, wrapW, h);
+  });
+}
+
+function fillWhite(ctx, w, h) {
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, w || p1Canvas.width, h || p1Canvas.height);
+}
+
+// ===== COLOR PALETTE =====
+function buildColorPalette() {
+  const row = document.getElementById('color-row');
+  row.innerHTML = '';
+  COLORS.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'color-swatch' + (i === 0 ? ' active' : '');
+    btn.style.background = c;
+    if (c === '#1a1a1a') btn.style.border = '3px solid #555';
+    btn.setAttribute('data-color', c);
+    btn.onclick = () => pickColor(c, btn);
+    row.appendChild(btn);
+  });
+}
+
+function pickColor(color, btn) {
+  STATE.currentColor = color;
+  STATE.erasing = false;
+  document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('eraser-btn').classList.remove('active');
+}
+
+// ===== BRUSH =====
+function setBrush(size, id) {
+  STATE.brushSize = size;
+  document.querySelectorAll('.brush-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  STATE.erasing = false;
+  document.getElementById('eraser-btn').classList.remove('active');
+}
+
+function toggleEraser() {
+  STATE.erasing = !STATE.erasing;
+  const btn = document.getElementById('eraser-btn');
+  btn.classList.toggle('active', STATE.erasing);
+}
+
+// ===== SHAPES =====
+function setShape(shape) {
+  STATE.currentShape = shape;
+  document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('shape-' + shape);
+  if (btn) btn.classList.add('active');
+}
+
+function drawShape(ctx, shape, x1, y1, x2, y2, color, size) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = size;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  const dx = x2 - x1, dy = y2 - y1;
+  switch(shape) {
+    case 'circle':
+      const r = Math.sqrt(dx*dx + dy*dy) / 2;
+      ctx.arc(x1 + dx/2, y1 + dy/2, r, 0, Math.PI*2);
+      break;
+    case 'square':
+      ctx.strokeRect(x1, y1, dx, dy);
+      return;
+    case 'triangle':
+      ctx.moveTo(x1 + dx/2, y1);
+      ctx.lineTo(x2, y2);
+      ctx.lineTo(x1, y2);
+      ctx.closePath();
+      break;
+    case 'star':
+      drawStar(ctx, x1 + dx/2, y1 + dy/2, 5, Math.abs(dx/2), Math.abs(dx/4));
+      break;
+  }
+  ctx.stroke();
+}
+
+function drawStar(ctx, cx, cy, spikes, outerR, innerR) {
+  let rot = Math.PI / 2 * 3;
+  const step = Math.PI / spikes;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - outerR);
+  for (let i = 0; i < spikes; i++) {
+    ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+    rot += step;
+    ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
+    rot += step;
+  }
+  ctx.lineTo(cx, cy - outerR);
+  ctx.closePath();
+  ctx.stroke();
+}
+
+// ===== UNDO =====
+function saveUndo(player) {
+  const canvas = player === 1 ? p1Canvas : p2Canvas;
+  const stack = player === 1 ? STATE.p1UndoStack : STATE.p2UndoStack;
+  if (stack.length >= 5) stack.shift();
+  stack.push(canvas.toDataURL());
+}
+
+function undoStroke() {
+  const stack = STATE.p1UndoStack;
+  if (stack.length === 0) return shake(p1Canvas);
+  const img = new Image();
+  img.onload = () => {
+    fillWhite(p1Ctx);
+    p1Ctx.drawImage(img, 0, 0);
+  };
+  img.src = stack.pop();
+}
+
+function shake(el) {
+  el.classList.add('shake');
+  setTimeout(() => el.classList.remove('shake'), 400);
+}
+
+function clearCanvas() {
+  saveUndo(1);
+  const w = parseInt(p1Canvas.style.width);
+  const h = parseInt(p1Canvas.style.height);
+  fillWhite(p1Ctx, w, h);
+  STATE.p1ColorSet.clear();
+  STATE.p1StrokeCount = 0;
+}
+
+// ===== GRID =====
+function toggleGrid() {
+  STATE.gridOn = !STATE.gridOn;
+  const btn = document.getElementById('grid-btn');
+  btn.style.borderColor = STATE.gridOn ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.15)';
+  document.getElementById('p1-canvas-wrapper').classList.toggle('grid-on', STATE.gridOn);
+  if (STATE.mode === 'friend') {
+    document.getElementById('p2-canvas-wrapper').classList.toggle('grid-on', STATE.gridOn);
+  }
+}
+
+// ===== CANVAS EVENTS =====
+function setupCanvasEvents() {
+  // Touch
+  p1Canvas.addEventListener('touchstart', e => { e.preventDefault(); handleStart(e, p1Canvas, p1Ctx, 1); }, {passive:false});
+  p1Canvas.addEventListener('touchmove', e => { e.preventDefault(); handleMove(e, p1Canvas, p1Ctx, 1); }, {passive:false});
+  p1Canvas.addEventListener('touchend', e => { e.preventDefault(); handleEnd(1); });
+
+  p2Canvas.addEventListener('touchstart', e => { e.preventDefault(); if(STATE.mode==='friend' && STATE.currentPhase==='p2') handleStart(e, p2Canvas, p2Ctx, 2); }, {passive:false});
+  p2Canvas.addEventListener('touchmove', e => { e.preventDefault(); if(STATE.mode==='friend' && STATE.currentPhase==='p2') handleMove(e, p2Canvas, p2Ctx, 2); }, {passive:false});
+  p2Canvas.addEventListener('touchend', e => { e.preventDefault(); if(STATE.mode==='friend') handleEnd(2); });
+
+  // Mouse
+  p1Canvas.addEventListener('mousedown', e => handleStart(e, p1Canvas, p1Ctx, 1));
+  p1Canvas.addEventListener('mousemove', e => handleMove(e, p1Canvas, p1Ctx, 1));
+  p1Canvas.addEventListener('mouseup', () => handleEnd(1));
+  p1Canvas.addEventListener('mouseleave', () => handleEnd(1));
+
+  p2Canvas.addEventListener('mousedown', e => { if(STATE.mode==='friend' && STATE.currentPhase==='p2') handleStart(e, p2Canvas, p2Ctx, 2); });
+  p2Canvas.addEventListener('mousemove', e => { if(STATE.mode==='friend' && STATE.currentPhase==='p2') handleMove(e, p2Canvas, p2Ctx, 2); });
+  p2Canvas.addEventListener('mouseup', () => { if(STATE.mode==='friend') handleEnd(2); });
+}
+
+function getPos(e, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width / (window.devicePixelRatio || 1);
+  const scaleY = canvas.height / rect.height / (window.devicePixelRatio || 1);
+  if (e.touches) {
+    return {
+      x: (e.touches[0].clientX - rect.left),
+      y: (e.touches[0].clientY - rect.top)
+    };
+  }
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+function handleStart(e, canvas, ctx, player) {
+  if (!STATE.drawingActive) return;
+  if (STATE.paused) return;
+  if (player === 1 && STATE.mode === 'friend' && STATE.currentPhase !== 'p1') return;
+  if (player === 2 && STATE.mode === 'friend' && STATE.currentPhase !== 'p2') return;
+
+  isDrawing = true;
+  const pos = getPos(e, canvas);
+  lastX = pos.x; lastY = pos.y;
+
+  if (player === 1) {
+    saveUndo(1);
+    STATE.p1StrokeCount++;
+    if (!STATE.erasing) STATE.p1ColorSet.add(STATE.currentColor);
+  }
+
+  if (STATE.currentShape !== 'none') {
+    STATE.shapeStart = {x: lastX, y: lastY};
+    return;
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(lastX, lastY);
+}
+
+function handleMove(e, canvas, ctx, player) {
+  if (!isDrawing || !STATE.drawingActive || STATE.paused) return;
+  const pos = getPos(e, canvas);
+
+  if (STATE.currentShape !== 'none' && STATE.shapeStart) {
+    // Preview: redraw from undo stack (last saved state)
+    const stack = player === 1 ? STATE.p1UndoStack : STATE.p2UndoStack;
+    if (stack.length > 0) {
+      const img = new Image();
+      img.onload = () => {
+        const w = parseInt(canvas.style.width);
+        const h = parseInt(canvas.style.height);
+        fillWhite(ctx, w, h);
+        ctx.drawImage(img, 0, 0);
+        drawShape(ctx, STATE.currentShape, STATE.shapeStart.x, STATE.shapeStart.y, pos.x, pos.y, STATE.currentColor, STATE.brushSize);
+      };
+      img.src = stack[stack.length - 1];
+    }
+    return;
+  }
+
+  ctx.strokeStyle = STATE.erasing ? '#ffffff' : STATE.currentColor;
+  ctx.lineWidth = STATE.erasing ? STATE.brushSize * 3 : STATE.brushSize;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.lineTo(pos.x, pos.y);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(pos.x, pos.y);
+
+  lastX = pos.x; lastY = pos.y;
+}
+
+function handleEnd(player) {
+  if (!isDrawing) return;
+  isDrawing = false;
+
+  if (STATE.currentShape !== 'none' && STATE.shapeStart) {
+    // Final shape drawn, already committed in preview
+    STATE.shapeStart = null;
+  }
+}
+
+// ===== SCREENS =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showHowTo() { showScreen('screen-howto'); }
+
+function goToNameScreen() {
+  showScreen('screen-name');
+  setTimeout(() => document.getElementById('p1-name').focus(), 300);
+}
+
+function goToModeSelect() {
+  const name = document.getElementById('p1-name').value.trim();
+  STATE.p1Name = name || 'You';
+  showScreen('screen-mode');
+}
+
+function selectMode(mode) {
+  STATE.mode = mode;
+  if (mode === 'friend') {
+    const p2 = prompt('Player 2 name?', 'Friend') || 'Friend';
+    STATE.p2Name = p2.slice(0, 12);
+  } else {
+    STATE.p2Name = 'AI Bot';
+  }
+  pickThemeAndCountdown();
+}
+
+// ===== THEME + COUNTDOWN =====
+function pickThemeAndCountdown() {
+  const t = THEMES[Math.floor(Math.random() * THEMES.length)];
+  STATE.theme = t;
+  document.getElementById('theme-display').textContent = t.emoji + ' ' + t.name;
+  document.getElementById('opponent-info').textContent = STATE.mode === 'ai' ? 'vs AI Bot 🤖' : `vs ${STATE.p2Name} 👫`;
+  showScreen('screen-theme');
+  startCountdown();
+}
+
+function startCountdown() {
+  let count = 5;
+  const arc = document.getElementById('countdown-arc');
+  const num = document.getElementById('countdown-num');
+  const totalDash = 276.46;
+
+  const tick = () => {
+    num.textContent = count;
+    arc.style.strokeDashoffset = totalDash * (1 - count/5);
+    if (count <= 0) {
+      clearInterval(cdInterval);
+      startDrawPhase();
+    }
+    count--;
+  };
+  tick();
+  const cdInterval = setInterval(tick, 1000);
+}
+
+// ===== DRAW PHASE =====
+function startDrawPhase() {
+  // Reset canvases
+  sizeCanvases();
+  STATE.p1UndoStack = [];
+  STATE.p2UndoStack = [];
+  STATE.p1StrokeCount = 0;
+  STATE.p2StrokeCount = 0;
+  STATE.p1ColorSet = new Set();
+  STATE.p2ColorSet = new Set();
+  STATE.p1FinishedEarly = false;
+  STATE.timeLeft = 40;
+  STATE.paused = false;
+  STATE.currentPhase = 'p1';
+  STATE.currentShape = 'none';
+  STATE.erasing = false;
+  STATE.currentColor = COLORS[0];
+  setShape('none');
+
+  // Reset tools UI
+  document.querySelectorAll('.color-swatch').forEach((s,i) => s.classList.toggle('active', i===0));
+  document.querySelectorAll('.brush-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('brush-thin').classList.add('active');
+  STATE.brushSize = 3;
+
+  // Update labels
+  document.getElementById('p1-draw-tag').textContent = STATE.p1Name;
+  document.getElementById('p1-canvas-label').textContent = STATE.p1Name.toUpperCase();
+  document.getElementById('draw-theme-banner').textContent = STATE.theme.emoji + ' ' + STATE.theme.name;
+
+  if (STATE.mode === 'ai') {
+    document.getElementById('p2-draw-tag').textContent = '🤖 AI';
+    document.getElementById('p2-draw-tag').className = 'player-tag ai-tag';
+    document.getElementById('p2-canvas-label').textContent = 'AI BOT';
+    document.getElementById('p2-canvas-label').className = 'canvas-label ai';
+    document.getElementById('p2-canvas').classList.add('ai-canvas');
+    document.getElementById('p2-canvas').classList.remove('active-canvas');
+    document.getElementById('ai-thinking').classList.add('active');
+  } else {
+    document.getElementById('p2-draw-tag').textContent = STATE.p2Name;
+    document.getElementById('p2-draw-tag').className = 'player-tag player2-tag';
+    document.getElementById('p2-canvas-label').textContent = STATE.p2Name.toUpperCase();
+    document.getElementById('p2-canvas-label').className = 'canvas-label p2';
+    document.getElementById('p2-canvas').classList.remove('ai-canvas');
+    document.getElementById('p2-canvas').classList.remove('active-canvas');
+    document.getElementById('ai-thinking').classList.remove('active');
+  }
+
+  document.getElementById('p1-canvas').classList.add('active-canvas');
+  showScreen('screen-draw');
+  STATE.drawingActive = true;
+
+  if (STATE.mode === 'ai') {
+    startAIDrawing();
+  }
+
+  startTimer();
+}
+
+// ===== TIMER =====
+function startTimer() {
+  clearInterval(STATE.timerInterval);
+  const el = document.getElementById('timer-display');
+  STATE.timerInterval = setInterval(() => {
+    if (STATE.paused) return;
+    STATE.timeLeft--;
+    el.textContent = STATE.timeLeft;
+    el.classList.toggle('urgent', STATE.timeLeft <= 10);
+    if (STATE.timeLeft <= 0) {
+      clearInterval(STATE.timerInterval);
+      onTimeUp();
+    }
+  }, 1000);
+}
+
+function togglePause() {
+  STATE.paused = !STATE.paused;
+  document.querySelector('.pause-btn').textContent = STATE.paused ? '▶️' : '⏸';
+}
+
+function onTimeUp() {
+  STATE.drawingActive = false;
+  clearInterval(STATE.aiDrawInterval);
+  document.getElementById('ai-thinking').classList.remove('active');
+
+  if (STATE.mode === 'friend' && STATE.currentPhase === 'p1') {
+    // Show pass screen for friend mode
+    document.getElementById('p1-canvas').classList.remove('active-canvas');
+    document.getElementById('pass-sub').textContent = `${STATE.p2Name}, it's your turn!`;
+    document.getElementById('pass-overlay').classList.add('active');
+  } else {
+    startJudging();
+  }
+}
+
+// ===== FRIEND: P2 DRAW =====
+function startP2Drawing() {
+  document.getElementById('pass-overlay').classList.remove('active');
+  STATE.currentPhase = 'p2';
+  STATE.timeLeft = 40;
+  STATE.drawingActive = true;
+
+  document.getElementById('p2-canvas').classList.add('active-canvas');
+  document.getElementById('p1-canvas').classList.remove('active-canvas');
+
+  startTimer();
+}
+
+// ===== AI BOT DRAWING =====
+const AI_DRAWINGS = {
+  PIZZA: [
+    {type:'circle',x1:80,y1:60,x2:200,y2:200,c:'#e67e22'},
+    {type:'circle',x1:95,y1:75,x2:185,y2:185,c:'#f39c12'},
+    {type:'circle',x1:110,y1:85,x2:170,y2:160,c:'#c0392b'},
+    {type:'line',x1:140,y1:80,x2:100,y2:170,c:'#2c3e50'},
+    {type:'line',x1:140,y1:80,x2:180,y2:170,c:'#2c3e50'},
+    {type:'dot',x:125,y:115,r:8,c:'#c0392b'},
+    {type:'dot',x:155,y:110,r:7,c:'#c0392b'},
+    {type:'dot',x:140,y:135,r:6,c:'#2ecc71'},
+  ],
+  DRAGON: [
+    {type:'circle',x1:100,y1:80,x2:180,y2:150,c:'#27ae60'},
+    {type:'line',x1:140,y1:120,x2:80,y2:200,c:'#27ae60'},
+    {type:'line',x1:140,y1:120,x2:200,y2:200,c:'#27ae60'},
+    {type:'line',x1:80,y1:200,x2:120,y2:280,c:'#27ae60'},
+    {type:'line',x1:200,y1:200,x2:160,y2:280,c:'#27ae60'},
+    {type:'triangle',x1:50,y1:60,x2:110,y2:110,c:'#e74c3c'},
+    {type:'dot',x:122,y:105,r:5,c:'#f1c40f'},
+  ],
+  ROCKET: [
+    {type:'triangle',x1:110,y1:40,x2:170,y2:140,c:'#3498db'},
+    {type:'square',x1:115,y1:120,x2:165,y2:220,c:'#3498db'},
+    {type:'circle',x1:120,y1:130,x2:160,y2:170,c:'#ecf0f1'},
+    {type:'triangle',x1:90,y1:190,x2:125,y2:230,c:'#e74c3c'},
+    {type:'triangle',x1:155,y1:190,x2:190,y2:230,c:'#e74c3c'},
+    {type:'dot',x:140,y:240,r:15,c:'#e67e22'},
+    {type:'dot',x:140,y:260,r:10,c:'#e74c3c'},
+  ],
+  DEFAULT: [
+    {type:'circle',x1:80,y1:80,x2:200,y2:200,c:'#3498db'},
+    {type:'dot',x:120,y:130,r:10,c:'#e74c3c'},
+    {type:'dot',x:160,y:130,r:10,c:'#e74c3c'},
+    {type:'line',x1:110,y1:155,x2:170,y2:165,c:'#2c3e50'},
+    {type:'triangle',x1:105,y1:70,x2:175,y2:90,c:'#f1c40f'},
+  ]
+};
+
+function startAIDrawing() {
+  const theme = STATE.theme.name;
+  const steps = AI_DRAWINGS[theme] || AI_DRAWINGS.DEFAULT;
+  let i = 0;
+  const delay = 38000 / steps.length;
+
+  STATE.aiDrawInterval = setInterval(() => {
+    if (STATE.paused) return;
+    if (i >= steps.length) {
+      clearInterval(STATE.aiDrawInterval);
+      document.getElementById('ai-thinking').classList.remove('active');
+      // Count AI colors
+      steps.forEach(s => STATE.p2ColorSet.add(s.c));
+      STATE.p2StrokeCount = steps.length * 5;
+      return;
+    }
+    drawAIStep(p2Ctx, steps[i]);
+    i++;
+  }, delay);
+}
+
+function drawAIStep(ctx, step) {
+  ctx.strokeStyle = step.c;
+  ctx.fillStyle = step.c;
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+
+  switch(step.type) {
+    case 'circle':
+      const rx = (step.x2 - step.x1)/2, ry = (step.y2 - step.y1)/2;
+      ctx.beginPath();
+      ctx.ellipse(step.x1+rx, step.y1+ry, rx, ry, 0, 0, Math.PI*2);
+      ctx.stroke();
+      break;
+    case 'line':
+      ctx.beginPath();
+      ctx.moveTo(step.x1, step.y1);
+      ctx.lineTo(step.x2, step.y2);
+      ctx.stroke();
+      break;
+    case 'triangle':
+      const mx = (step.x1+step.x2)/2;
+      ctx.beginPath();
+      ctx.moveTo(mx, step.y1);
+      ctx.lineTo(step.x2, step.y2);
+      ctx.lineTo(step.x1, step.y2);
+      ctx.closePath();
+      ctx.stroke();
+      break;
+    case 'square':
+      ctx.strokeRect(step.x1, step.y1, step.x2-step.x1, step.y2-step.y1);
+      break;
+    case 'dot':
+      ctx.beginPath();
+      ctx.arc(step.x, step.y, step.r, 0, Math.PI*2);
+      ctx.fill();
+      break;
+  }
+}
+
+// ===== JUDGING =====
+function startJudging() {
+  showScreen('screen-judge');
+  document.getElementById('judge-sub').textContent = 'Analyzing your masterpieces!';
+  document.getElementById('fairness-card').style.display = 'block';
+  document.getElementById('result-actions').style.display = 'none';
+
+  setTimeout(() => {
+    judgeResults();
+  }, 1200);
+}
+
+function judgeResults() {
+  // 5 criteria judging
+  const criteria = [
+    { label: '🎨 Colors Used', p1: Math.min(5, STATE.p1ColorSet.size + Math.floor(Math.random()*2)), p2: Math.min(5, STATE.p2ColorSet.size + Math.floor(Math.random()*2)), max: 5 },
+    { label: '✏️ Lines Drawn', p1: Math.min(5, Math.floor(STATE.p1StrokeCount/8) + Math.floor(Math.random()*2) + 1), p2: Math.min(5, Math.floor(STATE.p2StrokeCount/8) + Math.floor(Math.random()*2) + 1), max: 5 },
+    { label: '🔷 Shape Detail', p1: Math.floor(Math.random()*3)+2, p2: Math.floor(Math.random()*3)+2, max: 5 },
+    { label: '⚡ Speed Bonus', p1: STATE.p1FinishedEarly ? 5 : Math.floor(Math.random()*3)+1, p2: Math.floor(Math.random()*3)+1, max: 5 },
+    { label: '🎉 Fun Factor', p1: Math.floor(Math.random()*2)+3, p2: Math.floor(Math.random()*2)+3, max: 5 },
+  ];
+
+  // Ensure some minimum for drawing
+  if (STATE.p1StrokeCount < 3) { criteria[1].p1 = 1; criteria[0].p1 = 1; }
+
+  let p1Total = criteria.reduce((s,c) => s + c.p1, 0);
+  let p2Total = criteria.reduce((s,c) => s + c.p2, 0);
+
+  // Gentle bias: player has slight advantage if they drew a lot
+  if (STATE.p1StrokeCount > 5 && p2Total > p1Total) {
+    const boost = Math.floor(Math.random() * 3);
+    p1Total += boost;
+    criteria[4].p1 = Math.min(5, criteria[4].p1 + boost);
+  }
+
+  STATE.lastResult = { criteria, p1Total, p2Total };
+  displayResults(criteria, p1Total, p2Total);
+}
+
+function displayResults(criteria, p1Total, p2Total) {
+  // Breakdown
+  const breakdown = document.getElementById('score-breakdown');
+  breakdown.innerHTML = '';
+
+  criteria.forEach((c, i) => {
+    const row = document.createElement('div');
+    row.className = 'score-row';
+    row.innerHTML = `
+      <span class="score-label">${c.label}</span>
+      <div class="score-bar-wrap">
+        <div class="score-bar p1" id="bar-p1-${i}" style="width:0%"></div>
+      </div>
+      <span class="score-num">${c.p1}</span>
+      <div class="score-bar-wrap">
+        <div class="score-bar p2" id="bar-p2-${i}" style="width:0%"></div>
+      </div>
+      <span class="score-num">${c.p2}</span>
+    `;
+    breakdown.appendChild(row);
+
+    setTimeout(() => {
+      document.getElementById(`bar-p1-${i}`).style.width = `${(c.p1/c.max)*100}%`;
+      document.getElementById(`bar-p2-${i}`).style.width = `${(c.p2/c.max)*100}%`;
+    }, 100 + i * 150);
+  });
+
+  // Totals
+  document.getElementById('total-p1-score').textContent = `${p1Total}/25`;
+  document.getElementById('total-p2-score').textContent = `${p2Total}/25`;
+
+  // Winner banner
+  const banner = document.getElementById('winner-banner');
+  const emoji = document.getElementById('winner-emoji');
+  const text = document.getElementById('winner-text');
+  const msg = document.getElementById('winner-msg');
+
+  const winnerMsgs = ['🔥 Legendary!', '⚡ Incredible!', '🌟 Superstar!', '💪 Unstoppable!', '🎨 True Artist!'];
+  const drawMsgs = ['🤝 Both amazing!', '🌟 Double legends!'];
+  const loseMsgs = ['✨ Great battle!', '🎨 Amazing art!', '💫 Keep practicing!'];
+
+  if (p1Total > p2Total) {
+    banner.className = 'winner-banner p1-win';
+    emoji.textContent = '🏆';
+    text.textContent = `${STATE.p1Name} WINS!`;
+    msg.textContent = winnerMsgs[Math.floor(Math.random()*winnerMsgs.length)];
+    updateRecord('win');
+  } else if (p2Total > p1Total) {
+    banner.className = 'winner-banner p2-win';
+    emoji.textContent = STATE.mode === 'ai' ? '🤖' : '🏆';
+    text.textContent = STATE.mode === 'ai' ? 'AI BOT WINS!' : `${STATE.p2Name} WINS!`;
+    msg.textContent = loseMsgs[Math.floor(Math.random()*loseMsgs.length)];
+    updateRecord('loss');
+    shake(document.getElementById('winner-banner'));
+  } else {
+    banner.className = 'winner-banner draw';
+    emoji.textContent = '🤝';
+    text.textContent = "IT'S A DRAW!";
+    msg.textContent = drawMsgs[Math.floor(Math.random()*drawMsgs.length)];
+  }
+
+  document.getElementById('judge-sub').textContent = `${STATE.theme.emoji} ${STATE.theme.name} — scores revealed!`;
+  spawnConfetti(p1Total >= p2Total);
+}
+
+// ===== FAIRNESS APPEAL =====
+function fairnessYes() {
+  document.getElementById('fairness-card').style.display = 'none';
+  document.getElementById('result-actions').style.display = 'flex';
+}
+
+function fairnessNo() {
+  const card = document.getElementById('fairness-card');
+  card.querySelector('.fairness-q').textContent = '🤔 OK! Rechecking...';
+  card.querySelector('.fairness-btns').style.display = 'none';
+
+  setTimeout(() => {
+    const { criteria, p1Total, p2Total } = STATE.lastResult;
+
+    // 60% chance to flip result in player's favor
+    const flip = Math.random() < 0.6;
+    let newP1 = p1Total;
+    let newP2 = p2Total;
+
+    if (flip) {
+      const bonus = Math.floor(Math.random()*3) + 1;
+      newP1 = p1Total + bonus;
+      newP2 = Math.max(1, p2Total - Math.floor(Math.random()*2));
+      criteria[4].p1 = Math.min(5, criteria[4].p1 + 2); // Fun factor boost
+      card.querySelector('.fairness-q').textContent = `✅ New score: ${STATE.p1Name} wins ${newP1}-${newP2}! AI learns too! 🤖`;
+    } else {
+      card.querySelector('.fairness-q').textContent = `📊 Confirmed! Result stands. Both drew amazingly! 🎨`;
+    }
+
+    STATE.lastResult.p1Total = newP1;
+    STATE.lastResult.p2Total = newP2;
+
+    if (flip) displayResults(criteria, newP1, newP2);
+
+    setTimeout(() => {
+      document.getElementById('fairness-card').style.display = 'none';
+      document.getElementById('result-actions').style.display = 'flex';
+      if (flip) spawnConfetti(true);
+    }, 2000);
+  }, 1500);
+}
+
+// ===== REMATCH =====
+function rematch() {
+  pickThemeAndCountdown();
+}
+
+// ===== RECORD =====
+function updateRecord(result) {
+  if (result === 'win') {
+    STATE.wins++;
+    STATE.streak = Math.max(0, STATE.streak) + 1;
+    if (STATE.streak === 3) showAchievement('🔥', '3 Win Streak!', 'You\'re on fire!');
+    if (STATE.wins === 1) showAchievement('🏆', 'First Victory!', 'You beat the AI!');
+  } else if (result === 'loss') {
+    STATE.losses++;
+    STATE.streak = 0;
+  }
+  localStorage.setItem('dd_wins', STATE.wins);
+  localStorage.setItem('dd_losses', STATE.losses);
+  localStorage.setItem('dd_streak', STATE.streak);
+  updateRecordDisplay();
+}
+
+function updateRecordDisplay() {
+  const strip = document.getElementById('record-strip');
+  if (STATE.wins + STATE.losses > 0) {
+    strip.style.display = 'flex';
+    document.getElementById('r-wins').textContent = STATE.wins;
+    document.getElementById('r-losses').textContent = STATE.losses;
+    document.getElementById('r-streak').textContent = STATE.streak;
+  }
+}
+
+// ===== ACHIEVEMENTS =====
+function showAchievement(icon, title, desc) {
+  const pop = document.getElementById('achievement-pop');
+  document.getElementById('ach-icon').textContent = icon;
+  document.getElementById('ach-title').textContent = title;
+  document.getElementById('ach-desc').textContent = desc;
+  pop.classList.add('show');
+  setTimeout(() => pop.classList.remove('show'), 3500);
+}
+
+// ===== CONFETTI =====
+function spawnConfetti(winner) {
+  if (!winner) return;
+  const colors = ['#ff2d78','#00e5ff','#ffe600','#39ff14','#bf00ff','#ff7c00'];
+  for (let i = 0; i < 40; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = Math.random() * 10 + 5;
+      p.style.cssText = `
+        width: ${size}px; height: ${size}px;
+        background: ${colors[Math.floor(Math.random()*colors.length)]};
+        left: ${Math.random()*100}vw;
+        top: ${-size}px;
+        animation-duration: ${Math.random()*1+1}s;
+        animation-delay: ${Math.random()*0.5}s;
+        border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+      `;
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 2000);
+    }, i * 40);
+  }
+}
+
+// ===== SOUNDS (Web Audio) =====
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playBlip(freq = 440, type = 'sine', dur = 0.08) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    osc.start();
+    osc.stop(ctx.currentTime + dur);
+  } catch(e) {}
+}
+
+// Attach sound to drawing
+p1Canvas && p1Canvas.addEventListener('touchstart', () => playBlip(600,'square',0.05));
+</script>
+</body>
+</html>
